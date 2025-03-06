@@ -1,4 +1,56 @@
-<!DOCTYPE html>
+        // Load leaderboard data from CSV
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch('leaderboard.csv');
+                const csvText = await response.text();
+                
+                // Parse CSV (simple parser for this format)
+                const rows = csvText.split('\n');
+                const headers = rows[0].split(',');
+                
+                const parsedData = [];
+                
+                for (let i = 1; i < rows.length; i++) {
+                    if (!rows[i].trim()) continue; // Skip empty rows
+                    
+                    const values = rows[i].split(',');
+                    const entry = {};
+                    
+                    // Clean up quotes from values
+                    for (let j = 0; j < headers.length; j++) {
+                        let value = values[j];
+                        if (value) {
+                            // Remove quotes if present
+                            if (value.startsWith('"') && value.endsWith('"')) {
+                                value = value.substring(1, value.length - 1);
+                            }
+                            
+                            // Convert numeric values
+                            if (headers[j] === 'timeInSeconds') {
+                                entry[headers[j]] = parseInt(value);
+                            } else {
+                                entry[headers[j]] = value;
+                            }
+                        }
+                    }
+                    
+                    parsedData.push(entry);
+                }
+                
+                leaderboard = parsedData;
+                updateLeaderboard();
+                
+                // Show history section if we have data
+                if (leaderboard.length > 0) {
+                    historySection.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading leaderboard data:', error);
+                // If we can't load the CSV, initialize with empty leaderboard
+                leaderboard = [];
+                historySection.classList.add('hidden');
+            }
+        }<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -203,40 +255,61 @@
         let timerInterval;
         let teamName = '';
         let currentTeam = null;
+        let leaderboard = [];
         
-        // Pre-populated leaderboard
-        let leaderboard = [
-            {
-                team: "Team Alpha",
-                completionTime: "1:32:42",
-                timeInSeconds: 5562,
-                date: "2025-03-05"
-            },
-            {
-                team: "The Escapists",
-                completionTime: "1:27:17",
-                timeInSeconds: 5237,
-                date: "2025-03-05"
-            },
-            {
-                team: "Puzzle Masters",
-                completionTime: "1:22:58",
-                timeInSeconds: 4978,
-                date: "2025-03-06"
-            },
-            {
-                team: "Code Breakers",
-                completionTime: "1:35:25",
-                timeInSeconds: 5725,
-                date: "2025-03-06"
-            },
-            {
-                team: "Mystery Solvers",
-                completionTime: "1:45:10",
-                timeInSeconds: 6310,
-                date: "2025-03-04"
+        // Load leaderboard data from CSV
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch('leaderboard.csv');
+                const csvText = await response.text();
+                
+                // Parse CSV (simple parser for this format)
+                const rows = csvText.split('\n');
+                const headers = rows[0].split(',');
+                
+                const parsedData = [];
+                
+                for (let i = 1; i < rows.length; i++) {
+                    if (!rows[i].trim()) continue; // Skip empty rows
+                    
+                    const values = rows[i].split(',');
+                    const entry = {};
+                    
+                    // Clean up quotes from values
+                    for (let j = 0; j < headers.length; j++) {
+                        let value = values[j];
+                        if (value) {
+                            // Remove quotes if present
+                            if (value.startsWith('"') && value.endsWith('"')) {
+                                value = value.substring(1, value.length - 1);
+                            }
+                            
+                            // Convert numeric values
+                            if (headers[j] === 'timeInSeconds') {
+                                entry[headers[j]] = parseInt(value);
+                            } else {
+                                entry[headers[j]] = value;
+                            }
+                        }
+                    }
+                    
+                    parsedData.push(entry);
+                }
+                
+                leaderboard = parsedData;
+                updateLeaderboard();
+                
+                // Show history section if we have data
+                if (leaderboard.length > 0) {
+                    historySection.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading leaderboard data:', error);
+                // If we can't load the CSV, initialize with empty leaderboard
+                leaderboard = [];
+                historySection.classList.add('hidden');
             }
-        ];
+        }
         
         // Session-only game history since localStorage isn't available in this environment
         // In a non-sandboxed environment, you could use localStorage
@@ -358,11 +431,8 @@
             // Add the new record to the leaderboard
             leaderboard.push(gameRecord);
             
-            // In a normal environment, we would save to localStorage like this:
-            // localStorage.setItem('escapeGameLeaderboard', JSON.stringify(leaderboard));
-            // But we're using in-memory storage due to sandbox restrictions
-            
-            // Update the leaderboard display
+            // In a production environment, you would save this back to the CSV
+            // But for now, we just update the leaderboard display
             updateLeaderboard();
         }
         
@@ -476,15 +546,10 @@
             teamNameInput.focus();
         }
         
-        // Initialize leaderboard on load
-        updateLeaderboard();
-        
-        // Show history section on initial load if there's leaderboard data, otherwise hide it
-        if (leaderboard.length === 0) {
-            historySection.classList.add('hidden');
-        } else {
-            historySection.classList.remove('hidden');
-        }
+        // Initialize and load data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadLeaderboard();
+        });
     </script>
 </body>
 </html>
