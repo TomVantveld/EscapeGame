@@ -1,6 +1,6 @@
-﻿team,completionTime,timeInSeconds,date
-"Team Alpha,""1:32:42"",5552,""2025-03-05"""
-"The Escapists,""1:27:17"",5237,""2025-03-05"""
-"Puzzle Masters,""1:22:58"",4978,""2025-03-06"""
-"Code Breakers,""1:35:25"",5725,""2025-03-06"""
-"Mystery Solvers,""1:45:10"",6310,""2025-03-04"""
+team,completionTime,timeInSeconds,date
+"Team Alpha","1:32:42",5562,"2025-03-05"
+"The Escapists","1:27:17",5237,"2025-03-05"
+"Puzzle Masters","1:22:58",4978,"2025-03-06"
+"Code Breakers","1:35:25",5725,"2025-03-06"
+"Mystery Solvers","1:45:10",6310,"2025-03-04"
