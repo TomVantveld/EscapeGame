@@ -12,7 +12,7 @@
             padding: 0;
             text-align: center;
             background-color: #f5f5f5;
-            background-image: url('background.jpeg');
+            background-image: url('https://i.imgur.com/hl4LskR.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -105,12 +105,28 @@
             background-color: rgba(255, 255, 255, 0.9);
             padding: 15px;
             border-radius: 5px;
-            max-height: 200px;
+            max-height: 300px;
             overflow-y: auto;
         }
         .game-record {
             padding: 8px 0;
             border-bottom: 1px solid #eee;
+        }
+        .user-record {
+            background-color: rgba(223, 240, 216, 0.6);
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .leaderboard-position {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            text-align: center;
+            line-height: 25px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 50%;
+            margin-right: 10px;
         }
     </style>
 </head>
@@ -160,7 +176,7 @@
         
         <!-- Game History Section -->
         <div id="history-section" class="game-history hidden">
-            <h3>Previous Games</h3>
+            <h3>Top Players</h3>
             <div id="game-records"></div>
         </div>
     </div>
@@ -186,26 +202,39 @@
         let startTime;
         let timerInterval;
         let teamName = '';
+        let currentTeam = null;
         
-        // Pre-populated game history that will persist across refreshes
-        let gameHistory = [
+        // Pre-populated leaderboard
+        let leaderboard = [
             {
                 team: "Team Alpha",
                 completionTime: "03:42",
-                date: "2025-03-05",
-                time: "14:22:15"
+                timeInSeconds: 222,
+                date: "2025-03-05"
             },
             {
                 team: "The Escapists",
                 completionTime: "04:17",
-                date: "2025-03-05",
-                time: "15:45:30"
+                timeInSeconds: 257,
+                date: "2025-03-05"
             },
             {
                 team: "Puzzle Masters",
                 completionTime: "02:58",
-                date: "2025-03-06",
-                time: "10:12:42"
+                timeInSeconds: 178,
+                date: "2025-03-06"
+            },
+            {
+                team: "Code Breakers",
+                completionTime: "03:25",
+                timeInSeconds: 205,
+                date: "2025-03-06"
+            },
+            {
+                team: "Mystery Solvers",
+                completionTime: "05:10",
+                timeInSeconds: 310,
+                date: "2025-03-04"
             }
         ];
         
@@ -305,56 +334,107 @@
             }
         }
         
-        // Save game to history
-        function saveGameToHistory(team, time) {
+        // Save game to leaderboard
+        function saveGameToLeaderboard(team, timeString) {
             const now = new Date();
             const date = now.toLocaleDateString();
-            const gameTime = now.toLocaleTimeString();
+            const timeInSeconds = timeToSeconds(timeString);
             
             const gameRecord = {
                 team: team,
-                completionTime: time,
-                date: date,
-                time: gameTime
+                completionTime: timeString,
+                timeInSeconds: timeInSeconds,
+                date: date
             };
             
-            // Add the new game to the history
-            gameHistory.push(gameRecord);
+            // Set as current team for highlighting
+            currentTeam = gameRecord;
             
-            // Keep only the last 10 games
-            if (gameHistory.length > 10) {
-                gameHistory = gameHistory.slice(-10);
-            }
+            // Add the new record to the leaderboard
+            leaderboard.push(gameRecord);
             
             // In a normal environment, we would save to localStorage like this:
-            // localStorage.setItem('escapeGameHistory', JSON.stringify(gameHistory));
+            // localStorage.setItem('escapeGameLeaderboard', JSON.stringify(leaderboard));
             // But we're using in-memory storage due to sandbox restrictions
             
-            // Update the history display
-            updateGameHistory();
+            // Update the leaderboard display
+            updateLeaderboard();
         }
         
-        // Update game history display
-        function updateGameHistory() {
+        // Convert time string (MM:SS) to seconds
+        function timeToSeconds(timeString) {
+            const [minutes, seconds] = timeString.split(':').map(Number);
+            return minutes * 60 + seconds;
+        }
+        
+        // Convert seconds to time string (MM:SS)
+        function secondsToTime(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${padZero(minutes)}:${padZero(seconds)}`;
+        }
+        
+        // Update leaderboard display
+        function updateLeaderboard() {
             gameRecordsContainer.innerHTML = '';
             
-            if (gameHistory.length === 0) {
-                gameRecordsContainer.innerHTML = '<p>No games played yet.</p>';
+            if (leaderboard.length === 0) {
+                gameRecordsContainer.innerHTML = '<p>No records yet. Be the first to complete the challenge!</p>';
                 return;
             }
             
-            // Create a copy of the array to avoid modifying the original when we reverse it
-            const displayHistory = [...gameHistory];
+            // Sort leaderboard by completion time (lowest first)
+            const sortedLeaderboard = [...leaderboard].sort((a, b) => a.timeInSeconds - b.timeInSeconds);
             
-            displayHistory.reverse().forEach(game => {
+            // Take only top 5 for display
+            const topFive = sortedLeaderboard.slice(0, 5);
+            
+            // Display top 5
+            topFive.forEach((record, index) => {
                 const recordElement = document.createElement('div');
                 recordElement.className = 'game-record';
+                
+                // Check if this is the current team's record
+                const isCurrentTeam = currentTeam && record.team === currentTeam.team && 
+                                      record.completionTime === currentTeam.completionTime;
+                
+                if (isCurrentTeam) {
+                    recordElement.classList.add('user-record');
+                }
+                
                 recordElement.innerHTML = `
-                    <strong>${game.team}</strong> - Time: ${game.completionTime} 
-                    <small>(${game.date} at ${game.time})</small>
+                    <span class="leaderboard-position">${index + 1}</span>
+                    <strong>${record.team}</strong> - ${record.completionTime}
+                    <small>(${record.date})</small>
                 `;
+                
                 gameRecordsContainer.appendChild(recordElement);
             });
+            
+            // If current team exists but is not in top 5, add them separately
+            if (currentTeam) {
+                const currentTeamRank = sortedLeaderboard.findIndex(
+                    record => record.team === currentTeam.team && 
+                             record.completionTime === currentTeam.completionTime
+                );
+                
+                if (currentTeamRank >= 5) {
+                    const separatorElement = document.createElement('div');
+                    separatorElement.style.textAlign = 'center';
+                    separatorElement.style.padding = '10px 0';
+                    separatorElement.innerHTML = '...';
+                    gameRecordsContainer.appendChild(separatorElement);
+                    
+                    const userRecordElement = document.createElement('div');
+                    userRecordElement.className = 'game-record user-record';
+                    userRecordElement.innerHTML = `
+                        <span class="leaderboard-position">${currentTeamRank + 1}</span>
+                        <strong>${currentTeam.team}</strong> - ${currentTeam.completionTime}
+                        <small>(${currentTeam.date})</small>
+                    `;
+                    gameRecordsContainer.appendChild(userRecordElement);
+                }
+            }
         }
         
         // Reset the game to initial state
@@ -371,19 +451,19 @@
             gameSection.classList.add('hidden');
             successSection.classList.add('hidden');
             
-            // Show game history
+            // Show game leaderboard
             historySection.classList.remove('hidden');
-            updateGameHistory();
+            updateLeaderboard();
             
             // Focus on team name input
             teamNameInput.focus();
         }
         
-        // Initialize game history
-        updateGameHistory();
+        // Initialize leaderboard on load
+        updateLeaderboard();
         
-        // Show history section on initial load if there's history, otherwise hide it
-        if (gameHistory.length === 0) {
+        // Show history section on initial load if there's leaderboard data, otherwise hide it
+        if (leaderboard.length === 0) {
             historySection.classList.add('hidden');
         } else {
             historySection.classList.remove('hidden');
