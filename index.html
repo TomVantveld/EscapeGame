@@ -1,4 +1,40 @@
-<!DOCTYPE html>
+        // Export leaderboard data to CSV file
+        function exportLeaderboard() {
+            // Sort leaderboard by completion time (lowest first)
+            const sortedLeaderboard = [...leaderboard].sort((a, b) => a.timeInSeconds - b.timeInSeconds);
+            
+            // Create CSV content
+            let csvContent = "team,completionTime,timeInSeconds,date\n";
+            
+            sortedLeaderboard.forEach(record => {
+                // Format each record as a CSV row
+                csvContent += `"${record.team}","${record.completionTime}",${record.timeInSeconds},"${record.date}"\n`;
+            });
+            
+            // Create a blob with the CSV content
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            
+            // Create a download link and trigger the download
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'escape_game_leaderboard.csv');
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }        // Export button click handler
+        exportButton.addEventListener('click', function() {
+            exportLeaderboard();
+        });        .export-button {
+            margin-top: 10px;
+            background-color: #27ae60;
+        }
+        .export-button:hover {
+            background-color: #219653;
+        }<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -181,6 +217,9 @@
         <div id="history-section" class="game-history hidden">
             <h3>Top Players</h3>
             <div id="game-records"></div>
+            <div style="text-align: center; margin-top: 15px;">
+                <button id="export-button" class="export-button">Export Leaderboard</button>
+            </div>
         </div>
     </div>
     
@@ -200,6 +239,7 @@
         const finalTime = document.getElementById('final-time');
         const backButton = document.getElementById('back-button');
         const gameRecordsContainer = document.getElementById('game-records');
+        const exportButton = document.getElementById('export-button');
         
         // Variables
         let startTime;
