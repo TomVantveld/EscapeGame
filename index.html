@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escape Game Challenge</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0;
+            text-align: center;
+            background-color: #f5f5f5;
+            background-image: url('https://i.imgur.com/hl4LskR.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            height: 100%;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+        }
+        .game-section {
+            margin-bottom: 30px;
+        }
+        .timer {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #e74c3c;
+        }
+        input[type="text"] {
+            padding: 10px;
+            width: 300px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .message {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 18px;
+        }
+        .error {
+            background-color: #fadbd8;
+            color: #c0392b;
+        }
+        .success {
+            background-color: #d4efdf;
+            color: #27ae60;
+        }
+        .hidden {
+            display: none;
+        }
+        .congratulations {
+            font-size: 2em;
+            color: #27ae60;
+            margin-bottom: 20px;
+        }
+        .back-button {
+            margin-top: 20px;
+            background-color: #7f8c8d;
+        }
+        .back-button:hover {
+            background-color: #636e72;
+        }
+        .game-history {
+            margin-top: 30px;
+            text-align: left;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .game-record {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Escape Game Challenge</h1>
+        
+        <!-- Welcome Section -->
+        <div id="welcome-section" class="game-section">
+            <p>Welcome to the Escape Game Challenge! Enter your team name and click "Begin" to start.</p>
+            <div>
+                <input type="text" id="team-name" placeholder="Enter your team name">
+                <button id="begin-button">Begin</button>
+            </div>
+        </div>
+        
+        <!-- Game Section -->
+        <div id="game-section" class="game-section hidden">
+            <div class="message" id="instruction-message">
+                Go to the bookshelf in the corner of the room. Look for a red folder containing the clues you need to solve this puzzle.
+            </div>
+            
+            <div>
+                <p>Time elapsed:</p>
+                <div class="timer" id="timer">00:00</div>
+            </div>
+            
+            <div>
+                <p>Enter the solution:</p>
+                <input type="text" id="solution-input" placeholder="Your answer">
+                <button id="submit-button">Submit</button>
+            </div>
+            
+            <div id="result-message" class="message hidden"></div>
+        </div>
+        
+        <!-- Success Section -->
+        <div id="success-section" class="game-section hidden">
+            <div class="congratulations">Congratulations!</div>
+            <p>Your team has successfully completed the challenge!</p>
+            <div>
+                <p>Team name: <span id="final-team-name"></span></p>
+                <p>Your time: <span id="final-time"></span></p>
+                <button id="back-button" class="back-button">Back to Start</button>
+            </div>
+        </div>
+        
+        <!-- Game History Section -->
+        <div id="history-section" class="game-history hidden">
+            <h3>Previous Games</h3>
+            <div id="game-records"></div>
+        </div>
+    </div>
+    
+    <script>
+        // DOM Elements
+        const welcomeSection = document.getElementById('welcome-section');
+        const gameSection = document.getElementById('game-section');
+        const successSection = document.getElementById('success-section');
+        const historySection = document.getElementById('history-section');
+        const teamNameInput = document.getElementById('team-name');
+        const beginButton = document.getElementById('begin-button');
+        const timerElement = document.getElementById('timer');
+        const solutionInput = document.getElementById('solution-input');
+        const submitButton = document.getElementById('submit-button');
+        const resultMessage = document.getElementById('result-message');
+        const finalTeamName = document.getElementById('final-team-name');
+        const finalTime = document.getElementById('final-time');
+        const backButton = document.getElementById('back-button');
+        const gameRecordsContainer = document.getElementById('game-records');
+        
+        // Variables
+        let startTime;
+        let timerInterval;
+        let teamName = '';
+        
+        // Pre-populated game history that will persist across refreshes
+        let gameHistory = [
+            {
+                team: "Team Alpha",
+                completionTime: "03:42",
+                date: "2025-03-05",
+                time: "14:22:15"
+            },
+            {
+                team: "The Escapists",
+                completionTime: "04:17",
+                date: "2025-03-05",
+                time: "15:45:30"
+            },
+            {
+                team: "Puzzle Masters",
+                completionTime: "02:58",
+                date: "2025-03-06",
+                time: "10:12:42"
+            }
+        ];
+        
+        // Session-only game history since localStorage isn't available in this environment
+        // In a non-sandboxed environment, you could use localStorage
+        
+        // Begin button click handler
+        beginButton.addEventListener('click', function() {
+            teamName = teamNameInput.value.trim();
+            if (!teamName) {
+                teamName = 'Anonymous Team';
+            }
+            
+            // Hide welcome section and show game section
+            welcomeSection.classList.add('hidden');
+            historySection.classList.add('hidden');
+            gameSection.classList.remove('hidden');
+            
+            // Start the timer
+            startTimer();
+            
+            // Focus on the solution input
+            solutionInput.focus();
+        });
+        
+        // Back button click handler
+        backButton.addEventListener('click', function() {
+            resetGame();
+        });
+        
+        // Submit button click handler
+        submitButton.addEventListener('click', checkSolution);
+        
+        // Also check solution when pressing Enter in the input field
+        solutionInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                checkSolution();
+            }
+        });
+        
+        // Start the timer
+        function startTimer() {
+            startTime = new Date();
+            timerInterval = setInterval(updateTimer, 1000);
+            updateTimer(); // Update immediately
+        }
+        
+        // Update the timer display
+        function updateTimer() {
+            const currentTime = new Date();
+            const elapsedTime = Math.floor((currentTime - startTime) / 1000);
+            
+            const minutes = Math.floor(elapsedTime / 60);
+            const seconds = elapsedTime % 60;
+            
+            timerElement.textContent = `${padZero(minutes)}:${padZero(seconds)}`;
+        }
+        
+        // Add leading zero to numbers less than 10
+        function padZero(num) {
+            return num < 10 ? `0${num}` : num;
+        }
+        
+        // Check if the solution is correct
+        function checkSolution() {
+            const userSolution = solutionInput.value.trim();
+            
+            if (userSolution.toLowerCase() === 'egg') {
+                // Correct solution
+                clearInterval(timerInterval);
+                const finalTimeString = timerElement.textContent;
+                
+                // Save game to history
+                saveGameToHistory(teamName, finalTimeString);
+                
+                // Display success section
+                gameSection.classList.add('hidden');
+                successSection.classList.remove('hidden');
+                
+                // Update final information
+                finalTeamName.textContent = teamName;
+                finalTime.textContent = finalTimeString;
+            } else {
+                // Incorrect solution
+                resultMessage.textContent = 'Incorrect answer. Please try again.';
+                resultMessage.className = 'message error';
+                resultMessage.classList.remove('hidden');
+                
+                // Clear the input field
+                solutionInput.value = '';
+                solutionInput.focus();
+                
+                // Hide the error message after 3 seconds
+                setTimeout(function() {
+                    resultMessage.classList.add('hidden');
+                }, 3000);
+            }
+        }
+        
+        // Save game to history
+        function saveGameToHistory(team, time) {
+            const now = new Date();
+            const date = now.toLocaleDateString();
+            const gameTime = now.toLocaleTimeString();
+            
+            const gameRecord = {
+                team: team,
+                completionTime: time,
+                date: date,
+                time: gameTime
+            };
+            
+            // Add the new game to the history
+            gameHistory.push(gameRecord);
+            
+            // Keep only the last 10 games
+            if (gameHistory.length > 10) {
+                gameHistory = gameHistory.slice(-10);
+            }
+            
+            // In a normal environment, we would save to localStorage like this:
+            // localStorage.setItem('escapeGameHistory', JSON.stringify(gameHistory));
+            // But we're using in-memory storage due to sandbox restrictions
+            
+            // Update the history display
+            updateGameHistory();
+        }
+        
+        // Update game history display
+        function updateGameHistory() {
+            gameRecordsContainer.innerHTML = '';
+            
+            if (gameHistory.length === 0) {
+                gameRecordsContainer.innerHTML = '<p>No games played yet.</p>';
+                return;
+            }
+            
+            // Create a copy of the array to avoid modifying the original when we reverse it
+            const displayHistory = [...gameHistory];
+            
+            displayHistory.reverse().forEach(game => {
+                const recordElement = document.createElement('div');
+                recordElement.className = 'game-record';
+                recordElement.innerHTML = `
+                    <strong>${game.team}</strong> - Time: ${game.completionTime} 
+                    <small>(${game.date} at ${game.time})</small>
+                `;
+                gameRecordsContainer.appendChild(recordElement);
+            });
+        }
+        
+        // Reset the game to initial state
+        function resetGame() {
+            // Clear timer if it's running
+            clearInterval(timerInterval);
+            
+            // Reset input fields
+            teamNameInput.value = '';
+            solutionInput.value = '';
+            
+            // Show welcome section, hide others
+            welcomeSection.classList.remove('hidden');
+            gameSection.classList.add('hidden');
+            successSection.classList.add('hidden');
+            
+            // Show game history
+            historySection.classList.remove('hidden');
+            updateGameHistory();
+            
+            // Focus on team name input
+            teamNameInput.focus();
+        }
+        
+        // Initialize game history
+        updateGameHistory();
+        
+        // Show history section on initial load if there's history, otherwise hide it
+        if (gameHistory.length === 0) {
+            historySection.classList.add('hidden');
+        } else {
+            historySection.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
