@@ -1,40 +1,4 @@
-        // Export leaderboard data to CSV file
-        function exportLeaderboard() {
-            // Sort leaderboard by completion time (lowest first)
-            const sortedLeaderboard = [...leaderboard].sort((a, b) => a.timeInSeconds - b.timeInSeconds);
-            
-            // Create CSV content
-            let csvContent = "team,completionTime,timeInSeconds,date\n";
-            
-            sortedLeaderboard.forEach(record => {
-                // Format each record as a CSV row
-                csvContent += `"${record.team}","${record.completionTime}",${record.timeInSeconds},"${record.date}"\n`;
-            });
-            
-            // Create a blob with the CSV content
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            
-            // Create a download link and trigger the download
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            
-            link.setAttribute('href', url);
-            link.setAttribute('download', 'escape_game_leaderboard.csv');
-            link.style.visibility = 'hidden';
-            
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }        // Export button click handler
-        exportButton.addEventListener('click', function() {
-            exportLeaderboard();
-        });        .export-button {
-            margin-top: 10px;
-            background-color: #27ae60;
-        }
-        .export-button:hover {
-            background-color: #219653;
-        }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -135,6 +99,13 @@
         }
         .back-button:hover {
             background-color: #636e72;
+        }
+        .export-button {
+            margin-top: 10px;
+            background-color: #27ae60;
+        }
+        .export-button:hover {
+            background-color: #219653;
         }
         .game-history {
             margin-top: 30px;
@@ -305,6 +276,11 @@
             resetGame();
         });
         
+        // Export button click handler
+        exportButton.addEventListener('click', function() {
+            exportLeaderboard();
+        });
+        
         // Submit button click handler
         submitButton.addEventListener('click', checkSolution);
         
@@ -425,6 +401,35 @@
             
             // Update the leaderboard display
             updateLeaderboard();
+        }
+        
+        // Export leaderboard data to CSV file
+        function exportLeaderboard() {
+            // Sort leaderboard by completion time (lowest first)
+            const sortedLeaderboard = [...leaderboard].sort((a, b) => a.timeInSeconds - b.timeInSeconds);
+            
+            // Create CSV content
+            let csvContent = "team,completionTime,timeInSeconds,date\n";
+            
+            sortedLeaderboard.forEach(record => {
+                // Format each record as a CSV row
+                csvContent += `"${record.team}","${record.completionTime}",${record.timeInSeconds},"${record.date}"\n`;
+            });
+            
+            // Create a blob with the CSV content
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            
+            // Create a download link and trigger the download
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'escape_game_leaderboard.csv');
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
         
         // Update leaderboard display
