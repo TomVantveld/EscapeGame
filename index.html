@@ -6,7 +6,7 @@
                 
                 // Parse CSV (simple parser for this format)
                 const rows = csvText.split('\n');
-                const headers = rows[0].split(',');
+                const headers = rows[0].split(',').map(h => h.trim());
                 
                 const parsedData = [];
                 
@@ -18,8 +18,9 @@
                     
                     // Clean up quotes from values
                     for (let j = 0; j < headers.length; j++) {
-                        let value = values[j];
-                        if (value) {
+                        if (j < values.length) { // Make sure we have enough values
+                            let value = values[j] ? values[j].trim() : '';
+                            
                             // Remove quotes if present
                             if (value.startsWith('"') && value.endsWith('"')) {
                                 value = value.substring(1, value.length - 1);
@@ -27,11 +28,19 @@
                             
                             // Convert numeric values
                             if (headers[j] === 'timeInSeconds') {
-                                entry[headers[j]] = parseInt(value);
+                                entry[headers[j]] = parseInt(value) || 0;
                             } else {
                                 entry[headers[j]] = value;
                             }
+                        } else {
+                            // Default values if missing
+                            if (headers[j] === 'timeInSeconds') {
+                                entry[headers[j]] = 0;
+                            } else {
+                                entry[headers[j]] = '';
+                            }
                         }
+                    }
                     }
                     
                     parsedData.push(entry);
@@ -159,6 +168,8 @@
             border-radius: 5px;
             max-height: 300px;
             overflow-y: auto;
+            width: 100%;
+            box-sizing: border-box;
         }
         .game-record {
             padding: 8px 0;
@@ -492,7 +503,7 @@
                 recordElement.innerHTML = `
                     <span class="leaderboard-position">${index + 1}</span>
                     <strong>${record.team}</strong> - ${record.completionTime}
-                    <small>(${record.date})</small>
+                    <small>(${record.date || 'No date'})</small>
                 `;
                 
                 gameRecordsContainer.appendChild(recordElement);
@@ -517,7 +528,7 @@
                     userRecordElement.innerHTML = `
                         <span class="leaderboard-position">${currentTeamRank + 1}</span>
                         <strong>${currentTeam.team}</strong> - ${currentTeam.completionTime}
-                        <small>(${currentTeam.date})</small>
+                        <small>(${currentTeam.date || 'Today'})</small>
                     `;
                     gameRecordsContainer.appendChild(userRecordElement);
                 }
