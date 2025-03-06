@@ -442,8 +442,7 @@
             // Add the new record to the leaderboard
             leaderboard.push(gameRecord);
             
-            // In a production environment, you would save this back to the CSV
-            // But for now, we just update the leaderboard display
+            // Update the leaderboard display
             updateLeaderboard();
         }
         
@@ -559,7 +558,15 @@
         
         // Initialize and load data when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            loadLeaderboard();
+            // Initialize the leaderboard
+            updateLeaderboard();
+            
+            // Show history section if there's leaderboard data
+            if (leaderboard.length > 0) {
+                historySection.classList.remove('hidden');
+            } else {
+                historySection.classList.add('hidden');
+            }
         });
     </script>
 </body>
