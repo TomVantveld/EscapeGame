@@ -1,71 +1,17 @@
-        // Load leaderboard data from CSV
-        async function loadLeaderboard() {
-            try {
-                const response = await fetch('leaderboard.csv');
-                const csvText = await response.text();
-                
-                // Parse CSV (simple parser for this format)
-                const rows = csvText.split('\n');
-                const headers = rows[0].split(',').map(h => h.trim());
-                
-                const parsedData = [];
-                
-                for (let i = 1; i < rows.length; i++) {
-                    if (!rows[i].trim()) continue; // Skip empty rows
-                    
-                    const values = rows[i].split(',');
-                    const entry = {};
-                    
-                    // Clean up quotes from values
-                    for (let j = 0; j < headers.length; j++) {
-                        if (j < values.length) { // Make sure we have enough values
-                            let value = values[j] ? values[j].trim() : '';
-                            
-                            // Remove quotes if present
-                            if (value.startsWith('"') && value.endsWith('"')) {
-                                value = value.substring(1, value.length - 1);
-                            }
-                            
-                            // Convert numeric values
-                            if (headers[j] === 'timeInSeconds') {
-                                entry[headers[j]] = parseInt(value) || 0;
-                            } else {
-                                entry[headers[j]] = value;
-                            }
-                        } else {
-                            // Default values if missing
-                            if (headers[j] === 'timeInSeconds') {
-                                entry[headers[j]] = 0;
-                            } else {
-                                entry[headers[j]] = '';
-                            }
-                        }
-                    }
-                    }
-                    
-                    parsedData.push(entry);
-                }
-                
-                leaderboard = parsedData;
-                updateLeaderboard();
-                
-                // Show history section if we have data
-                if (leaderboard.length > 0) {
-                    historySection.classList.remove('hidden');
-                }
-            } catch (error) {
-                console.error('Error loading leaderboard data:', error);
-                // If we can't load the CSV, initialize with empty leaderboard
-                leaderboard = [];
-                historySection.classList.add('hidden');
-            }
-        }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Escape Game Challenge</title>
+    <link rel="icon" href="data:,"> <!-- Prevents favicon.ico 404 error -->
     <style>
+        html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
         body {
             font-family: 'Arial', sans-serif;
             max-width: 800px;
@@ -83,12 +29,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-        html {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
         }
         h1 {
             color: #2c3e50;
@@ -268,62 +208,42 @@
         let currentTeam = null;
         let leaderboard = [];
         
-        // Load leaderboard data from CSV
-        async function loadLeaderboard() {
-            try {
-                const response = await fetch('leaderboard.csv');
-                const csvText = await response.text();
-                
-                // Parse CSV (simple parser for this format)
-                const rows = csvText.split('\n');
-                const headers = rows[0].split(',');
-                
-                const parsedData = [];
-                
-                for (let i = 1; i < rows.length; i++) {
-                    if (!rows[i].trim()) continue; // Skip empty rows
-                    
-                    const values = rows[i].split(',');
-                    const entry = {};
-                    
-                    // Clean up quotes from values
-                    for (let j = 0; j < headers.length; j++) {
-                        let value = values[j];
-                        if (value) {
-                            // Remove quotes if present
-                            if (value.startsWith('"') && value.endsWith('"')) {
-                                value = value.substring(1, value.length - 1);
-                            }
-                            
-                            // Convert numeric values
-                            if (headers[j] === 'timeInSeconds') {
-                                entry[headers[j]] = parseInt(value);
-                            } else {
-                                entry[headers[j]] = value;
-                            }
-                        }
-                    }
-                    
-                    parsedData.push(entry);
-                }
-                
-                leaderboard = parsedData;
-                updateLeaderboard();
-                
-                // Show history section if we have data
-                if (leaderboard.length > 0) {
-                    historySection.classList.remove('hidden');
-                }
-            } catch (error) {
-                console.error('Error loading leaderboard data:', error);
-                // If we can't load the CSV, initialize with empty leaderboard
-                leaderboard = [];
-                historySection.classList.add('hidden');
-            }
-        }
+        // CSV leaderboard file
+        const LEADERBOARD_CSV = 'leaderboard.csv';
         
-        // Session-only game history since localStorage isn't available in this environment
-        // In a non-sandboxed environment, you could use localStorage
+        // Fallback leaderboard data in case CSV fails to load
+        const FALLBACK_LEADERBOARD = [
+            {
+                team: "Team Alpha",
+                completionTime: "1:32:42",
+                timeInSeconds: 5562,
+                date: "2025-03-05"
+            },
+            {
+                team: "The Escapists",
+                completionTime: "1:27:17",
+                timeInSeconds: 5237,
+                date: "2025-03-05"
+            },
+            {
+                team: "Puzzle Masters",
+                completionTime: "1:22:58",
+                timeInSeconds: 4978,
+                date: "2025-03-06"
+            },
+            {
+                team: "Code Breakers",
+                completionTime: "1:35:25",
+                timeInSeconds: 5725,
+                date: "2025-03-06"
+            },
+            {
+                team: "Mystery Solvers",
+                completionTime: "1:45:10",
+                timeInSeconds: 6310,
+                date: "2025-03-04"
+            }
+        ];
         
         // Begin button click handler
         beginButton.addEventListener('click', function() {
@@ -387,6 +307,31 @@
             return num < 10 ? `0${num}` : num;
         }
         
+        // Convert time string (H:MM:SS or MM:SS) to seconds
+        function timeToSeconds(timeString) {
+            const parts = timeString.split(':').map(Number);
+            if (parts.length === 3) {
+                // Format: H:MM:SS
+                return parts[0] * 3600 + parts[1] * 60 + parts[2];
+            } else {
+                // Format: MM:SS
+                return parts[0] * 60 + parts[1];
+            }
+        }
+        
+        // Convert seconds to time string (H:MM:SS or MM:SS)
+        function secondsToTime(totalSeconds) {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            if (hours > 0) {
+                return `${hours}:${padZero(minutes)}:${padZero(seconds)}`;
+            } else {
+                return `${padZero(minutes)}:${padZero(seconds)}`;
+            }
+        }
+        
         // Check if the solution is correct
         function checkSolution() {
             const userSolution = solutionInput.value.trim();
@@ -396,8 +341,8 @@
                 clearInterval(timerInterval);
                 const finalTimeString = timerElement.textContent;
                 
-                // Save game to history
-                saveGameToHistory(teamName, finalTimeString);
+                // Save game to leaderboard
+                saveGameToLeaderboard(teamName, finalTimeString);
                 
                 // Display success section
                 gameSection.classList.add('hidden');
@@ -442,33 +387,12 @@
             // Add the new record to the leaderboard
             leaderboard.push(gameRecord);
             
+            // Save to CSV (if we were in a server environment)
+            // For GitHub Pages, we'll just update the in-memory leaderboard
+            // In a real server environment, you would save this back to the CSV file
+            
             // Update the leaderboard display
             updateLeaderboard();
-        }
-        
-        // Convert time string (H:MM:SS or MM:SS) to seconds
-        function timeToSeconds(timeString) {
-            const parts = timeString.split(':').map(Number);
-            if (parts.length === 3) {
-                // Format: H:MM:SS
-                return parts[0] * 3600 + parts[1] * 60 + parts[2];
-            } else {
-                // Format: MM:SS
-                return parts[0] * 60 + parts[1];
-            }
-        }
-        
-        // Convert seconds to time string (H:MM:SS or MM:SS)
-        function secondsToTime(totalSeconds) {
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = totalSeconds % 60;
-            
-            if (hours > 0) {
-                return `${hours}:${padZero(minutes)}:${padZero(seconds)}`;
-            } else {
-                return `${padZero(minutes)}:${padZero(seconds)}`;
-            }
         }
         
         // Update leaderboard display
@@ -512,7 +436,7 @@
             if (currentTeam) {
                 const currentTeamRank = sortedLeaderboard.findIndex(
                     record => record.team === currentTeam.team && 
-                             record.completionTime === currentTeam.completionTime
+                              record.completionTime === currentTeam.completionTime
                 );
                 
                 if (currentTeamRank >= 5) {
@@ -556,17 +480,113 @@
             teamNameInput.focus();
         }
         
-        // Initialize and load data when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize the leaderboard
+        // Parse CSV data
+        function parseCSV(csvText) {
+            try {
+                // Split by lines
+                const lines = csvText.trim().split(/\r?\n/);
+                
+                // Get headers from first line
+                const headers = lines[0].split(',').map(header => 
+                    // Remove quotes if present
+                    header.trim().replace(/^["'](.*)["']$/, '$1')
+                );
+                
+                // Process data rows
+                const data = [];
+                
+                for (let i = 1; i < lines.length; i++) {
+                    if (!lines[i].trim()) continue; // Skip empty lines
+                    
+                    // Split the line by commas, but handle quoted values
+                    const values = [];
+                    let currentValue = '';
+                    let insideQuotes = false;
+                    
+                    for (let j = 0; j < lines[i].length; j++) {
+                        const char = lines[i][j];
+                        
+                        if (char === '"') {
+                            insideQuotes = !insideQuotes;
+                        } else if (char === ',' && !insideQuotes) {
+                            values.push(currentValue.trim());
+                            currentValue = '';
+                        } else {
+                            currentValue += char;
+                        }
+                    }
+                    
+                    // Add the last value
+                    values.push(currentValue.trim());
+                    
+                    // Create an object for this row
+                    const rowObject = {};
+                    
+                    // Map values to headers
+                    headers.forEach((header, index) => {
+                        if (index < values.length) {
+                            let value = values[index];
+                            
+                            // Remove quotes if present
+                            value = value.replace(/^["'](.*)["']$/, '$1');
+                            
+                            if (header === 'timeInSeconds') {
+                                rowObject[header] = parseInt(value) || 0;
+                            } else {
+                                rowObject[header] = value;
+                            }
+                        }
+                    });
+                    
+                    data.push(rowObject);
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('Error parsing CSV:', error);
+                return [];
+            }
+        }
+        
+        // Load leaderboard data from CSV
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch(LEADERBOARD_CSV);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const csvText = await response.text();
+                leaderboard = parseCSV(csvText);
+                
+                if (leaderboard.length === 0) {
+                    throw new Error('No data found in CSV or parsing failed');
+                }
+                
+                console.log('Leaderboard loaded from CSV:', leaderboard);
+            } catch (error) {
+                console.warn('Error loading leaderboard from CSV:', error);
+                console.log('Using fallback leaderboard data');
+                leaderboard = FALLBACK_LEADERBOARD;
+            }
+            
+            // Update the display
             updateLeaderboard();
             
-            // Show history section if there's leaderboard data
+            // Show history section if there's data
             if (leaderboard.length > 0) {
                 historySection.classList.remove('hidden');
             } else {
                 historySection.classList.add('hidden');
             }
+        }
+        
+        // Initialize the game
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load the leaderboard data
+            loadLeaderboard();
+            
+            // Set up other initializations if needed
         });
     </script>
 </body>
